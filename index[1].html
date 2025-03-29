@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunter's Grid - QR Scanner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #b1b0aa;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            background: rgb(218, 171, 171);
+            border: solid;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 17px 17px rgba(0.5,0.5,0.7,0.7);
+            width: 90%;
+            max-width: 400px;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .button {
+            background-color: #251c1d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .button:hover { background: darkgray; }
+        .qr-box { margin-top: 15px; padding: 10px; border-radius: 10px; }
+        #reader { width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HUNTER'S GRID</h1>
+        <input type="text" id="teamCode" placeholder="Enter Team Code">
+        <button class="button" onclick="verifyTeam()">Submit</button>
+        <h3 id="teamFound"></h3>
+        <div id="result"></div>
+        <div id="scanSection" style="display:none;">
+            <p>Scan The QR Code</p>
+            <div id="reader"></div>
+            <button class="button" onclick="startScanner()">Start Scanning</button>
+        </div>
+    </div>
+
+    <script>
+        let teamData = {
+            "123": { 
+                levels: [
+                    { qrCode: "QRCODE123", riddle: "Go to AI lab C-07 on PC 12!", nextQr: "QRCODE123-2" },
+                    { qrCode: "QRCODE123-2", riddle: "Find the hidden QR in Library Room 5!", nextQr: "QRCODE123-3" },
+                    { qrCode: "QRCODE123-3", riddle: "Go to the final location near the cafeteria!", nextQr: "QRCODE123-3" },
+                    {qrCode : "QRCODE123-4",nextQr:"FINAL"}
+                ]
+            },
+            "456": { 
+                levels: [
+                    { qrCode: "QRCODE456", riddle: "Go to F-02, find a hidden code under a bench!", nextQr: "QRCODE456-2" },
+                    { qrCode: "QRCODE456-2", riddle: "Look near the parking lot, under a red car!", nextQr: "QRCODE456-3" },
+                    { qrCode: "QRCODE456-3", riddle: "Final location near the basketball court!", nextQr: "FINAL" }
+                ]
+            },
+            "789":{
+                levels: [
+                    {qrCode: "QRCODE789",riddle:"Your next destination is on the door of room w-36",nextQr: "QRCODE789-2"},
+                ]
+            },
+            "101112":{
+                levels: [
+                { qrCode: "QRCODE101112", riddle: "Your next destination is in front of the sports room", nextQr: "QRCODE101112-2" },
+                { qrCode: "QRCODE101112-2", riddle: "Your next destination is on the  door of lab ccc", nextQr: "QRCODE101112-3" },
+                { qrCode: "QRCODE101112-3", riddle: "Go to the final location near the cafeteria!", nextQr: "FINAL" }
+            ]
+            },
+            "131415":{
+                levels: [
+                    {qrCode: "QRCODE131415", riddle :"Your next destination is on the class room f-09",nextQr:"QRCODE131415-2"},
+                    {qrCode: "QRCODE131415-2", riddle :"Your next destination is near the pillar of canteen",nextQr:"QRCODE131415-3"},
+                    
+                ]
+            },
+            "20250501":{
+                levels:[
+                    {qrCode:"QRCODE20250501",riddle: "YOUR NEXT DESTINATION IS ON THE GROUND FLOOR ON THE DOOR OF ROOM C-13A",nextQr:"QRCODE20250501-2"},
+                    {qrCode:"QRCODE20250501-2",riddle: "YOUR NEXT DESTINATION IS ON THE TOP FLOOR NEAR THE ROOM G-04",nextQr:"QRCODE20250501-3"},
+                    {qrCode:"QRCODE20250501-3",riddle: "YOUR NEXT DESTINATION IS ON THE 2nd FLOOR ",nextQr:"QRCODE20250501-4"},
+                    {qrCode:"QRCODE20250501-4",riddle:"YOUR NEXT DESTINATION IS ON THE DOOR OF THE ROOM D-38",nextQr:"QRCODE20250501-4"},
+                    {qrCode:"QRCODE20250501-4",nextQr:"FINAL"}
+                ]
+            },
+            ""
+        };
+        
+        let teamNames = {
+            "123": "Code Rangers",
+            "456": "Tech Warriors",
+            "789": "Binary bits",
+            "101112":"Bug Hackers"
+        };
+
+        let memeList = ["meme1.jpg", "meme2.jpg", "meme3.jpg", "meme4.jpg", "meme5.jpg"];
+        let currentTeam = localStorage.getItem("currentTeam") || "";
+        let lastScannedWrongQR = "";
+        let scanner;
+
+        document.getElementById("teamCode").value = currentTeam;
+        if (currentTeam) verifyTeam();
+
+        function verifyTeam() {
+            const teamCode = document.getElementById("teamCode").value;
+            const teamFound = document.getElementById("teamFound");
+            const scanSection = document.getElementById("scanSection");
+            
+            if (teamData[teamCode]) {
+                currentTeam = teamCode;
+                localStorage.setItem("currentTeam", currentTeam);
+                const teamName = teamNames[teamCode] || "Unknown Team";
+                teamFound.innerHTML = `<span style='color:green; font-weight:bold;'>Team: ${teamName} Ready!</span>`;
+                scanSection.style.display = "block";
+            } else {
+                currentTeam = "";
+                localStorage.removeItem("currentTeam");
+                teamFound.innerHTML = `<span style='color:red; font-weight:bold;'>Invalid Team Code</span>`;
+                scanSection.style.display = "none";
+            }
+        }
+
+        function startScanner() {
+            scanner = new Html5Qrcode("reader");
+            scanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess
+            );
+        }
+
+        function onScanSuccess(decodedText) {
+    let teamInfo = teamData[currentTeam];
+    if (!teamInfo) return;
+
+    // Find the current level by checking if the QR code matches any in the current team's levels
+    let currentLevelIndex = teamInfo.levels.findIndex(level => level.qrCode === decodedText);
+    
+    if (currentLevelIndex !== -1) {
+        let currentLevel = teamInfo.levels[currentLevelIndex];
+        
+        // Check if this is the final level
+        if (currentLevel.nextQr === "FINAL") {
+            const teamName = teamNames[currentTeam] || "Unknown Team";
+            document.body.innerHTML = `
+                <div class="container">
+                    <h1>Congratulations ${teamName}!</h1>
+                    <h2>YOU CLEARED THE ROUND 1 SHOW THIS PAGE TO THE VOLUNTEER IN FRONT OF THE AUDITORIUM</h2>
+                    <button class="button" onclick="location.reload()">Go Back</button>
+                </div>
+            `;
+        } else {
+            // Display the riddle for the current level
+            document.body.innerHTML = `
+                <div class="container">
+                    <h1>Riddle for ${teamNames[currentTeam]}:</h1>
+                    <h2>${currentLevel.riddle}</h2>
+                    <button class="button" onclick="location.reload()">Go Back</button>
+                </div>
+            `;
+        }
+    } else if (decodedText !== lastScannedWrongQR) {
+        lastScannedWrongQR = decodedText;
+        let randomMeme = memeList[Math.floor(Math.random() * memeList.length)];
+        document.body.innerHTML = `
+            <div class="container">
+                <img src="${randomMeme}" alt="Meme">
+                <button class="button" onclick="location.reload()">Go Back</button>
+            </div>
+        `;
+    }
+}
+    </script>
+</body>
+</html>

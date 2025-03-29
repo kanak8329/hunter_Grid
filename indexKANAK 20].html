@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunter's Grid - QR Scanner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #b1b0aa;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            background: rgb(218, 171, 171);
+            border: solid;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 17px 17px rgba(0.5,0.5,0.7,0.7);
+            width: 90%;
+            max-width: 400px;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .button {
+            background-color: #251c1d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .button:hover { background: darkgray; }
+        .qr-box { margin-top: 15px; padding: 10px; border-radius: 10px; }
+        #reader { width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HUNTER'S GRID</h1>
+        <input type="text" id="teamCode" placeholder="Enter Team Code">
+        <button class="button" onclick="verifyTeam()">Submit</button>
+        <h3 id="teamFound"></h3>
+        <div id="result"></div>
+        <div id="scanSection" style="display:none;">
+            <p>Scan The QR Code</p>
+            <div id="reader"></div>
+            <button class="button" onclick="startScanner()">Start Scanning</button>
+        </div>
+    </div>
+
+    <script>
+        let teamData = {
+            "123": { 
+                levels: [
+                    { qrCode: "QRCODE123", riddle: "Go to AI lab C-07 on PC 12!", nextQr: "QRCODE123-2" },
+                    { qrCode: "QRCODE123-2", riddle: "Find the hidden QR in Library Room 5!", nextQr: "QRCODE123-3" },
+                    { qrCode: "QRCODE123-3", riddle: "Go to the final location near the cafeteria!", nextQr: "QRCODE123-3" },
+                    {qrCode : "QRCODE123-4",nextQr:"FINAL"}
+                ]
+            },
+            "456": { 
+                levels: [
+                    { qrCode: "QRCODE456", riddle: "Go to F-02, find a hidden code under a bench!", nextQr: "QRCODE456-2" },
+                    { qrCode: "QRCODE456-2", riddle: "Look near the parking lot, under a red car!", nextQr: "QRCODE456-3" },
+                    { qrCode: "QRCODE456-3", riddle: "Final location near the basketball court!", nextQr: "FINAL" }
+                ]
+            },
+            "789":{
+                levels: [
+                    {qrCode: "QRCODE789",riddle:"Your next destination is on the door of room w-36",nextQr: "QRCODE789-2"},
+                ]
+            },
+            "101112":{
+                levels: [
+                { qrCode: "QRCODE101112", riddle: "Your next destination is in front of the sports room", nextQr: "QRCODE101112-2" },
+                { qrCode: "QRCODE101112-2", riddle: "Your next destination is on the  door of lab ccc", nextQr: "QRCODE101112-3" },
+                { qrCode: "QRCODE101112-3", riddle: "Go to the final location near the cafeteria!", nextQr: "FINAL" }
+            ]
+            },
+            "131415":{
+                levels: [
+                    {qrCode: "QRCODE131415", riddle :"Your next destination is on the class room f-09",nextQr:"QRCODE131415-2"},
+                    {qrCode: "QRCODE131415-2", riddle :"Your next destination is near the pillar of canteen",nextQr:"QRCODE131415-3"},
+                    
+                ]
+            },
+            "20250501":{
+                levels:[
+                    {qrCode:"QRCODE20250501",riddle: "YOUR NEXT DESTINATION IS ON THE GROUND FLOOR ON THE DOOR OF ROOM C-13A",nextQr:"QRCODE20250501-2"},
+                    {qrCode:"QRCODE20250501-2",riddle: "YOUR NEXT DESTINATION IS ON THE TOP FLOOR NEAR THE ROOM G-04",nextQr:"QRCODE20250501-3"},
+                    {qrCode:"QRCODE20250501-3",riddle: "YOUR NEXT DESTINATION IS ON  D-38 ",nextQr:"QRCODE20250501-4"},
+                    {qrCode:"QRCODE20250501-4",riddle:"YOUR NEXT DESTINATION IS ON THE DOOR OF THE ROOM E-01",nextQr:"QRCODE20250501-5"},
+                    {qrCode:"QRCODE20250501-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250502":{
+                levels:[
+                    {qrCode:"QRCODE20250502",riddle: "YOUR NEXT DESTINATION is in front of G21",nextQr:"QRCODE20250502-2"},
+                    {qrCode:"QRCODE20250502-2",riddle: "YOUR NEXT DESTINATION is swami vivekanand hall",nextQr:"QRCODE20250502-3"},
+                    {qrCode:"QRCODE20250502-3",riddle: "Find the class number E36 ",nextQr:"QRCODE20250502-4"},
+                    {qrCode:"QRCODE20250502-4",riddle:"YOUR NEXT DESTINATION IS ON THE entrance of lift (Search)  ",nextQr:"QRCODE20250502-5"},
+                    {qrCode:"QRCODE20250502-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250503":{
+                levels:[
+                    {qrCode:"QRCODE20250503",riddle: "start from First Year (Department)D floor ",nextQr:"QRCODE20250503-2"},
+                    {qrCode:"QRCODE20250503-2",riddle: "YOUR NEXT DESTINATION IS ON THE TOP FLOOR NEAR THE ROOM F-03 ",nextQr:"QRCODE20250503-3"},
+                    {qrCode:"QRCODE20250503-3",riddle: "YOUR NEXT DESTINATION IS ON THE 2nd FLOOR new construction bim  ",nextQr:"QRCODE20250503-4"},
+                    {qrCode:"QRCODE20250503-4",riddle:"YOUR NEXT DESTINATION IS ON THE DOOR OF ghr LAB research center(b)",nextQr:"QRCODE20250503-5"},
+                    {qrCode:"QRCODE20250503-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250504":{
+                levels:[
+                    {qrCode:"QRCODE20250504",riddle: "YOUR NEXT DESTINATION Start with mini Auditorium Gate",nextQr:"QRCODE20250504-2"},
+                    {qrCode:"QRCODE20250504-2",riddle: "YOUR NEXT DESTINATION IS GYM",nextQr:"QRCODE20250504-3"},
+                    {qrCode:"QRCODE20250504-3",riddle: "YOUR NEXT DESTINATION IS Training and Placement ",nextQr:"QRCODE20250504-4"},
+                    {qrCode:"QRCODE20250504-4",riddle:"YOUR NEXT DESTINATION IS library notice board",nextQr:"QRCODE20250504-5"},
+                    {qrCode:"QRCODE20250504-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250505":{
+                levels:[
+                    {qrCode:"QRCODE20250505",riddle: "start with student canteen entrance ",nextQr:"QRCODE20250505-2"},
+                    {qrCode:"QRCODE20250505-2",riddle: "go to D-27 ",nextQr:"QRCODE20250505-3"},
+                    {qrCode:"QRCODE20250505-3",riddle: "Find the server room ",nextQr:"QRCODE20250505-4"},
+                    {qrCode:"QRCODE20250505-4",riddle:"YOUR Final DESTINATION IS W-10A",nextQr:"QRCODE20250505-5"},
+                    {qrCode:"QRCODE20250505-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250506":{
+                levels:[
+                    {qrCode:"QRCODE20250506",riddle: "Your journey starts now! Head to **C-08** and scan the QR code.",nextQr:"QRCODE20250506-2"},
+                    {qrCode:"QRCODE20250506-2",riddle: "Great job! Your next destination is **D-12**. Find the QR code there!",nextQr:"QRCODE20250506-3"},
+                    {qrCode:"QRCODE20250506-3",riddle: "You're getting closer! Search for the next hint at **E-36**. ",nextQr:"QRCODE20250506-4"},
+                    {qrCode:"QRCODE20250506-4",riddle:"Almost there! Go to **F-25** and scan your final QR code!",nextQr:"QRCODE20250506-5"},
+                    {qrCode:"QRCODE20250506-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250507":{
+                levels:[
+                    {qrCode:"QRCODE20250507",riddle: "YOUR  DESTINATION IS C-08 Fast",nextQr:"QRCODE20250507-2"},
+                    {qrCode:"QRCODE20250507-2",riddle: "YOUR NEXT DESTINATION IS ON E36",nextQr:"QRCODE20250507-3"},
+                    {qrCode:"QRCODE20250507-3",riddle: "Find the class number D-12 ",nextQr:"QRCODE20250507-4"},
+                    {qrCode:"QRCODE20250507-4",riddle:"Almost there! Head to **C-11** and scan the QR code.",nextQr:"QRCODE20250507-5"},
+                    {qrCode:"QRCODE20250507-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250508":{
+                levels:[
+                    {qrCode:"QRCODE20250508",riddle: "Your adventure begins at **C-03**. Find the QR code there!",nextQr:"QRCODE20250508-2"},
+                    {qrCode:"QRCODE20250508-2",riddle: "Good job! Your next clue is at **D-07**.",nextQr:"QRCODE20250508-3"},
+                    {qrCode:"QRCODE20250508-3",riddle: "Keep going! The next QR code is at **F-38**. ",nextQr:"QRCODE20250508-4"},
+                    {qrCode:"QRCODE20250508-4",riddle:"Final step! Go to **E-33** and scan the last QR code.",nextQr:"QRCODE20250508-5"},
+                    {qrCode:"QRCODE20250508-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250509":{
+                levels:[
+                    {qrCode:"QRCODE20250509",riddle: "Start at **C-14** and find your first QR code.",nextQr:"QRCODE20250509-2"},
+                    {qrCode:"QRCODE20250509-2",riddle: "Next destination: **E-01**. Look carefully!",nextQr:"QRCODE20250509-3"},
+                    {qrCode:"QRCODE20250509-3",riddle: "Almost there! Find the next hint at **D-11** ",nextQr:"QRCODE20250509-4"},
+                    {qrCode:"QRCODE20250509-4",riddle:"Final clue! Reach **F-22** to complete this challenge.",nextQr:"QRCODE20250509-5"},
+                    {qrCode:"QRCODE20250509-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250510":{
+                levels:[
+                    {qrCode:"QRCODE20250510",riddle: "Begin at **C-26**. Your journey starts here!",nextQr:"QRCODE202505010-2"},
+                    {qrCode:"QRCODE20250510-2",riddle: "Move to **D-02** for your next hint.",nextQr:"QRCODE202505010-3"},
+                    {qrCode:"QRCODE20250510-3",riddle: "You're doing great! Now, head to **E-34**.",nextQr:"QRCODE202505010-4"},
+                    {qrCode:"QRCODE20250510-4",riddle:"Final stop: **F-27**. Find the last QR code!",nextQr:"QRCODE202505010-5"},
+                    {qrCode:"QRCODE20250510-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250511":{
+                levels:[
+                    {qrCode:"QRCODE20250511",riddle: "Begin your challenge at **C-09**.",nextQr:"QRCODE202505011-2"},
+                    {qrCode:"QRCODE20250511-2",riddle: "Now, find your next clue at **E-02**.",nextQr:"QRCODE202505011-3"},
+                    {qrCode:"QRCODE20250511-3",riddle: "Keep going! Look for the next hint at **D-25**.",nextQr:"QRCODE202505011-4"},
+                    {qrCode:"QRCODE20250511-4",riddle:"Final step: Reach **F-26** to complete this quest!.",nextQr:"QRCODE202505011-5"},
+                    {qrCode:"QRCODE20250511-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250512":{
+                levels:[
+                    {qrCode:"QRCODE20250512",riddle: "Start your hunt at **C-16** and scan the QR code.",nextQr:"QRCODE202505012-2"},
+                    {qrCode:"QRCODE20250512-2",riddle: "Now, find the next clue at **E-03**",nextQr:"QRCODE202505012-3"},
+                    {qrCode:"QRCODE20250512-3",riddle: "You're doing great! Head to **D-08**.",nextQr:"QRCODE202505012-4"},
+                    {qrCode:"QRCODE20250512-4",riddle:"Final stop: **F-38**. Find the last QR code!",nextQr:"QRCODE202505012-5"},
+                    {qrCode:"QRCODE20250512-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250513":{
+                levels:[
+                    {qrCode:"QRCODE20250513",riddle: "Your challenge starts at **C-05**.",nextQr:"QRCODE202505013-2"},
+                    {qrCode:"QRCODE20250513-2",riddle: "Find your next clue at **D-09E-36**.",nextQr:"QRCODE202505013-3"},
+                    {qrCode:"QRCODE20250513-3",riddle: "Next, head to **D-09**.",nextQr:"QRCODE202505013-4"},
+                    {qrCode:"QRCODE20250513-4",riddle:"Final destination: **F-21**.",nextQr:"QRCODE202505013-5"},
+                    {qrCode:"QRCODE20250513-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250514":{
+                levels:[
+                    {qrCode:"QRCODE20250514",riddle: "Begin at **C-07B** and scan the QR code.",nextQr:"QRCODE202505014-2"},
+                    {qrCode:"QRCODE20250514-2",riddle: "Your next destination is **D-03**.",nextQr:"QRCODE202505014-3"},
+                    {qrCode:"QRCODE20250514-3",riddle: "Keep going! Find the next hint at **E-32**.",nextQr:"QRCODE202505014-4"},
+                    {qrCode:"QRCODE20250514-4",riddle:"Final step: Go to **F-26**.",nextQr:"QRCODE202505014-5"},
+                    {qrCode:"QRCODE20250514-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250515":{
+                levels:[
+                    {qrCode:"QRCODE20250515",riddle: "Start your adventure at **C-10**",nextQr:"QRCODE202505015-2"},
+                    {qrCode:"QRCODE20250515-2",riddle: "Keep moving! Search for the hint at **E-34**.",nextQr:"QRCODE202505015-3"},
+                    {qrCode:"QRCODE20250515-3",riddle: "Find the class number F-02 ",nextQr:"QRCODE202505015-4"},
+                    {qrCode:"QRCODE20250515-4",riddle:"Final stop: **E-34**!",nextQr:"QRCODE202505015-5"},
+                    {qrCode:"QRCODE20250515-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250516":{
+                levels:[
+                    {qrCode:"QRCODE20250516",riddle:"Begin your challenge at **C-04**",nextQr:"QRCODE202505016-2"},
+                    {qrCode:"QRCODE20250516-2",riddle:"You're doing great! Head to **E-33**",nextQr:"QRCODE202505016-3"},
+                    {qrCode:"QRCODE20250516-3",riddle:"Now, find the next clue at **D-01** ",nextQr:"QRCODE202505016-4"},
+                    {qrCode:"QRCODE20250516-4",riddle:"Final stop: **F-27**.",nextQr:"QRCODE202505016-5"},
+                    {qrCode:"QRCODE20250516-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250517":{
+                levels:[
+                    {qrCode:"QRCODE20250517",riddle: "Start at **C-14**.",nextQr:"QRCODE202505017-2"},
+                    {qrCode:"QRCODE20250517-2",riddle: "Keep moving! Search for the QR at **E-30**.",nextQr:"QRCODE202505017-3"},
+                    {qrCode:"QRCODE20250517-3",riddle: "Find your next hint at **D-10**. ",nextQr:"QRCODE202505017-4"},
+                    {qrCode:"QRCODE20250517-4",riddle:"Final step: Go to **F-01**.",nextQr:"QRCODE202505017-5"},
+                    {qrCode:"QRCODE20250517-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250518":{
+                levels:[
+                    {qrCode:"QRCODE20250518",riddle: "YOUR NEXT DESTINATION IS ON THE GROUND FLOOR ON THE DOOR OF ROOM C-13B",nextQr:"QRCODE202505018-2"},
+                    {qrCode:"QRCODE20250518-2",riddle: "Almost there! Find the next QR at **E-01**.",nextQr:"QRCODE202505018-3"},
+                    {qrCode:"QRCODE20250518-3",riddle: "Head to **D-07** for your next hint.",nextQr:"QRCODE202505018-4"},
+                    {qrCode:"QRCODE20250518-4",riddle:"Final step: Reach **F-22**.",nextQr:"QRCODE202505018-5"},
+                    {qrCode:"QRCODE20250518-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250519":{
+                levels:[
+                    {qrCode:"QRCODE20250519",riddle: " hint at **F-19**",nextQr:"QRCODE202505019-2"},
+                    {qrCode:"QRCODE20250519-2",riddle: "Find the next adventure at **C-03**",nextQr:"QRCODE202505019-3"},
+                    {qrCode:"QRCODE20250519-3",riddle: "Almost there! Head to **E-02**.",nextQr:"QRCODE202505019-4"},
+                    {qrCode:"QRCODE20250519-4",riddle:"Final stop: **D-24**!",nextQr:"QRCODE202505019-5"},
+                    {qrCode:"QRCODE20250519-5",nextQr:"FINAL"}
+                ]
+            },
+            "20250520":{
+                levels:[
+                    {qrCode:"QRCODE20250520",riddle: "hunt starts at **C-12**",nextQr:"QRCODE202505020-2"},
+                    {qrCode:"QRCODE20250520-2",riddle: "Find the next QR at **E-33**.",nextQr:"QRCODE202505020-3"},
+                    {qrCode:"QRCODE20250520-3",riddle: "Keep going! Search for your next hint at **D-11**. ",nextQr:"QRCODE202505020-4"},
+                    {qrCode:"QRCODE20250520-4",riddle:"Final step: Head to **F-25** and scan the last QR code!",nextQr:"QRCODE202505020-5"},
+                    {qrCode:"QRCODE20250520-5",nextQr:"FINAL"}
+                ]
+            }
+        };
+        
+        let teamNames = {
+            "123": "Code Rangers",
+            "456": "Tech Warriors",
+            "789": "Binary bits",
+            "101112":"Bug Hackers"
+        };
+
+        let memeList = ["meme1.jpg", "meme2.jpg", "meme3.jpg", "meme4.jpg", "meme5.jpg"];
+        let currentTeam = localStorage.getItem("currentTeam") || "";
+        let lastScannedWrongQR = "";
+        let scanner;
+
+        document.getElementById("teamCode").value = currentTeam;
+        if (currentTeam) verifyTeam();
+
+        function verifyTeam() {
+            const teamCode = document.getElementById("teamCode").value;
+            const teamFound = document.getElementById("teamFound");
+            const scanSection = document.getElementById("scanSection");
+            
+            if (teamData[teamCode]) {
+                currentTeam = teamCode;
+                localStorage.setItem("currentTeam", currentTeam);
+                const teamName = teamNames[teamCode] || "Unknown Team";
+                teamFound.innerHTML = `<span style='color:green; font-weight:bold;'>Team: ${teamName} Ready!</span>`;
+                scanSection.style.display = "block";
+            } else {
+                currentTeam = "";
+                localStorage.removeItem("currentTeam");
+                teamFound.innerHTML = `<span style='color:red; font-weight:bold;'>Invalid Team Code</span>`;
+                scanSection.style.display = "none";
+            }
+        }
+
+        function startScanner() {
+            scanner = new Html5Qrcode("reader");
+            scanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess
+            );
+        }
+
+        function onScanSuccess(decodedText) {
+    let teamInfo = teamData[currentTeam];
+    if (!teamInfo) return;
+
+    // Find the current level by checking if the QR code matches any in the current team's levels
+    let currentLevelIndex = teamInfo.levels.findIndex(level => level.qrCode === decodedText);
+    
+    if (currentLevelIndex !== -1) {
+        let currentLevel = teamInfo.levels[currentLevelIndex];
+        
+        // Check if this is the final level
+        if (currentLevel.nextQr === "FINAL") {
+            const teamName = teamNames[currentTeam] || "Unknown Team";
+            document.body.innerHTML = `
+                <div class="container">
+                    <h1>Congratulations ${teamName}!</h1>
+                    <h2>YOU CLEARED THE ROUND 1 SHOW THIS PAGE TO THE VOLUNTEER IN FRONT OF THE AUDITORIUM</h2>
+                    <button class="button" onclick="location.reload()">Go Back</button>
+                </div>
+            `;
+        } else {
+            // Display the riddle for the current level
+            document.body.innerHTML = `
+                <div class="container">
+                    <h1>Riddle for ${teamNames[currentTeam]}:</h1>
+                    <h2>${currentLevel.riddle}</h2>
+                    <button class="button" onclick="location.reload()">Go Back</button>
+                </div>
+            `;
+        }
+    } else if (decodedText !== lastScannedWrongQR) {
+        lastScannedWrongQR = decodedText;
+        let randomMeme = memeList[Math.floor(Math.random() * memeList.length)];
+        document.body.innerHTML = `
+            <div class="container">
+                <img src="${randomMeme}" alt="Meme">
+                <button class="button" onclick="location.reload()">Go Back</button>
+            </div>
+        `;
+    }
+}
+    </script>
+</body>
+</html>

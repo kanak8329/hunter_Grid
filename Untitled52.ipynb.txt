@@ -1,0 +1,112 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [] 
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "Y8N4pItVaiOV"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "vk5APEvcSzSD",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "e146c5b4-90de-43a3-a2b1-2eec84184514"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Collecting qrcode[pil]\n",
+            "  Downloading qrcode-8.0-py3-none-any.whl.metadata (17 kB)\n",
+            "Requirement already satisfied: pillow>=9.1.0 in /usr/local/lib/python3.11/dist-packages (from qrcode[pil]) (11.1.0)\n",
+            "Downloading qrcode-8.0-py3-none-any.whl (45 kB)\n",
+            "\u001b[?25l   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m0.0/45.7 kB\u001b[0m \u001b[31m?\u001b[0m eta \u001b[36m-:--:--\u001b[0m\r\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m45.7/45.7 kB\u001b[0m \u001b[31m1.9 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25hInstalling collected packages: qrcode\n",
+            "Successfully installed qrcode-8.0\n"
+          ]
+        }
+      ],
+      "source": [
+        "pip install qrcode[pil]"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import qrcode\n",
+        "\n",
+        "def generate_qr(data, filename=\"qrcode.png\", size=10):\n",
+        "    \"\"\"\n",
+        "    Generates a QR code with the given data and saves it as an image.\n",
+        "\n",
+        "    :param data: The data to be embedded in the QR code.\n",
+        "    :param filename: Name of the output file (default: 'qrcode.png').\n",
+        "    :param size: Size of the QR code (default: 10).\n",
+        "    \"\"\"\n",
+        "    qr = qrcode.QRCode(\n",
+        "        version=1,\n",
+        "        error_correction=qrcode.constants.ERROR_CORRECT_L,\n",
+        "        box_size=size,\n",
+        "        border=4\n",
+        "    )\n",
+        "    qr.add_data(data)\n",
+        "    qr.make(fit=True)\n",
+        "\n",
+        "    img = qr.make_image(fill=\"black\", back_color=\"white\")\n",
+        "    img.save(filename)\n",
+        "    print(f\"QR Code saved as {filename}\")\n",
+        "\n",
+        "# Example Usage too\n",
+        "generate_qr(\"QRCODE456-TEXT\", \"example_qr.png\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "KGPLin_D6YxP",
+        "outputId": "b3628071-1044-4379-a317-c2390a342772"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "QR Code saved as example_qr.png\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "vC6fjaqO6yAP"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
